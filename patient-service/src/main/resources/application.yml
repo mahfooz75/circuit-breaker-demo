@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: patient-service
+  main:
+    banner-mode: off
+server:
+  port: 8181
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        failureRateThreshold: 50       # Percentage of failures to trigger circuit breaker
+        slidingWindowType: COUNT_BASED # Sliding window can be COUNT_BASED or TIME_BASED
+        slidingWindowSize: 10          # Number of calls in the sliding window
+        minimumNumberOfCalls: 5        # Minimum number of calls before calculating failure rate
+        waitDurationInOpenState: 10s   # How long the circuit breaker should stay open before attempting to close
+        permittedNumberOfCallsInHalfOpenState: 3 # Calls allowed when circuit breaker is in half-open state
+        automaticTransitionFromOpenToHalfOpenEnabled: true # Automatically transition to half-open after wait duration
+        eventConsumerBufferSize: 10    # Number of events stored in the buffer for health metrics
+        recordExceptions:
+          - java.io.IOException        # Record exceptions to trigger failure
+          - java.lang.RuntimeException
+#          - org.springframework.web.client.ResourceAccessException
+#          - com.selftechlearner.patient_service.exception.DoctorServiceException
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException # Ignore specific exceptions
+          - com.selftechlearner.patient_service.exception.DoctorNotFoundException
+        slowCallRateThreshold: 100     # Percentage of slow calls considered as failure
+        slowCallDurationThreshold: 2s  # Time to consider a call as slow
+        writableStackTraceEnabled: true # Disable stack trace in exceptions for performance
+    instances:
+      doctorServiceCircuitBreaker:
+        baseConfig: default            # Inherit all from the default configuration
+        failureRateThreshold: 50       # Customize specific attributes
+        waitDurationInOpenState: 5s
+        minimumNumberOfCalls: 6
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
